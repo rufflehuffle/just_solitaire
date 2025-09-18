@@ -15,6 +15,8 @@ cards_being_dragged = []
 card_mouse_offset = 0
 drag_card_original_pos = None
 draw_clicked = False
+paused = False
+pause_debounce = False
 
 deck = Deck()
 piles = deck.draw_starting_piles()
@@ -34,6 +36,7 @@ while running:
             running = False
 
     screen.fill((81, 108, 58))
+    # BUG: Cursor flicks between 'ARROW' and 'HAND' ocassionally while hovering over a clickable object
     pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
     if (deck.rect.collidepoint(pygame.mouse.get_pos())):
         pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
@@ -142,6 +145,42 @@ while running:
         for card in cards_being_dragged:
             card.render(screen)
     
+    if pygame.key.get_pressed()[pygame.K_ESCAPE] and not pause_debounce:
+        pause_debounce = True
+        if not paused:
+            paused = True
+        else:
+            paused = False
+    
+    if not pygame.key.get_pressed()[pygame.K_ESCAPE]:
+        pause_debounce = False
+
+    if paused:
+        shadow_surf = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+        shadow_surf.fill((0, 0, 0, 128))
+        screen.blit(shadow_surf, (0, 0))
+
+        pop_up_rect = pygame.Rect(0, 0, 400, 300)
+        pop_up_rect.center = (screen.get_width() / 2, screen.get_height() / 2)
+        pygame.draw.rect(screen, (51, 45, 82), pop_up_rect)
+
+        font = pygame.font.SysFont('monogram', 32)
+
+        reset_text = font.render("Reset", False, 'black')
+        reset_rect = pygame.Rect(0, 0, 100, 50)
+        reset_rect.center = pop_up_rect.center
+        pygame.draw.rect(screen, 'white', reset_rect)
+        screen.blit(reset_text, (370, 285))
+
+        if reset_rect.collidepoint(pygame.mouse.get_pos()):
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+            if pygame.mouse.get_pressed()[0]:
+                paused = False
+                deck = Deck()
+                piles = deck.draw_starting_piles()
+                waste = Waste()
+                foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
+
     # Game win detection
     foundation_top_cards = [foundation.cards[-1].value for foundation in foundations if foundation.cards]
     if foundation_top_cards == ['K', 'K', 'K', 'K']:
