@@ -141,7 +141,28 @@ while running:
     # Game win detection
     foundation_top_cards = [foundation.cards[-1].value for foundation in foundations if foundation.cards]
     if foundation_top_cards == ['K', 'K', 'K', 'K']:
-        print('You won!')
+        # Render game-end pop-up
+        bg_rect = pygame.Rect(0, 0, 400, 300)
+        bg_rect.center = (screen.get_width() / 2, screen.get_height() / 2)
+        pygame.draw.rect(screen, 'wheat3', bg_rect)
+
+        font = pygame.font.SysFont('monogram', 32)
+        text = font.render('You won!', False, 'white')
+        screen.blit(text, (355, 240))
+        
+        reset_text = font.render("Reset", False, 'black')
+        reset_rect = pygame.Rect(0, 0, 100, 50)
+        reset_rect.center = bg_rect.center
+        pygame.draw.rect(screen, 'white', reset_rect)
+        screen.blit(reset_text, (370, 285))
+
+        if reset_rect.collidepoint(pygame.mouse.get_pos()):
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+            if pygame.mouse.get_pressed()[0]:
+                deck = Deck()
+                piles = deck.draw_starting_piles()
+                waste = Waste()
+                foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
 
     pygame.display.flip()
 
