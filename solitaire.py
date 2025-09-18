@@ -3,7 +3,7 @@ from my_classes import Card, Deck, Pile, Foundation, Waste
 from helper import *
 
 pygame.init()
-pygame.display.set_caption('Solitaire')
+pygame.display.set_caption('Just Solitaire')
 icon = pygame.image.load('sprites/KH.png')
 pygame.display.set_icon(icon)
 
@@ -20,18 +20,16 @@ pause_debounce = False
 round_over = False
 
 player = Player()
+game = Game()
+deck, piles, foundations, waste = game.deck, game.piles, game.foundations, game.waste
 
-deck = Deck()
-piles = deck.draw_starting_piles()
-waste = Waste()
-foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
 # Debug win screen
 # for foundation in foundations:
 #    foundation.append(Card('K', foundation.suit))
 
 # Debug round end
 # deck.loops = deck.max_loops - 1
-# deck.cards = [Card('K', 'S')]
+# deck.cards = []
 
 pygame.mixer.init()
 pygame.mixer.music.load("music/luigi.mp3")
@@ -92,7 +90,7 @@ while running:
 
     # Check for clicks on cards
     # BUG: If you're holding MB1 and drag your cursor over a card it'll scoop it up.
-    for card in get_all_cards_on_screen(piles, waste, foundations):
+    for card in game.visible_cards:
         if card.collision_rect.collidepoint(pygame.mouse.get_pos()) and card.is_draggable:
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
             if pygame.mouse.get_pressed()[0] and not cards_being_dragged:
@@ -192,35 +190,30 @@ while running:
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
             if pygame.mouse.get_pressed()[0]:
                 paused = False
-                deck = Deck()
-                piles = deck.draw_starting_piles()
-                waste = Waste()
-                foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
+                game = Game()
+                deck, piles, foundations, waste = game.deck, game.piles, game.foundations, game.waste
 
     # Game win detection
     foundation_top_cards = [foundation.cards[-1].value for foundation in foundations if foundation.cards]
     if foundation_top_cards == ['K', 'K', 'K', 'K']:
         # Render game-end pop-up
-        reset_rect = render_game_end(screen, 'You won!', piles, foundations)
+        reset_rect = game.render_game_end(screen, 'You won!')
 
         if reset_rect.collidepoint(pygame.mouse.get_pos()):
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
             if pygame.mouse.get_pressed()[0]:
-                deck = Deck()
-                piles = deck.draw_starting_piles()
-                waste = Waste()
-                foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
+                game = Game()
+                deck, piles, foundations, waste = game.deck, game.piles, game.foundations, game.waste
     
     if round_over:
-            reset_rect = render_game_end(screen, f'Round over! You have {player.lives} lives remaining', piles, foundations)
+            # BUG: Need to turn off interacting with cards / deck while this screen is open
+            reset_rect = game.render_game_end(screen, f'Round over! You have {player.lives} lives remaining')
 
             if reset_rect.collidepoint(pygame.mouse.get_pos()):
                 pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
                 if pygame.mouse.get_pressed()[0]:
-                    deck = Deck()
-                    piles = deck.draw_starting_piles()
-                    waste = Waste()
-                    foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
+                    game = Game()
+                    deck, piles, foundations, waste = game.deck, game.piles, game.foundations, game.waste
                     round_over = False
 
     pygame.display.flip()

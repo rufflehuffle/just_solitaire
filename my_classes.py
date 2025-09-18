@@ -6,6 +6,65 @@ card_back = pygame.image.load("sprites\card-back.png")
 class Player:
     def __init__(self):
         self.lives = 3
+        self.cards_revealed = 0
+        self.foundation_cards_set = 0
+
+class Game:
+    def __init__(self):
+        self.deck = Deck()
+        self.piles = self.deck.draw_starting_piles()
+        self.waste = Waste()
+        self.foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
+
+    @property
+    def score(self):
+        pile_score_multiplier = 1
+        foundation_score_multipler = 3
+
+        n_face_up_in_piles = 0
+        for pile in self.piles:
+            n_face_up_in_piles += sum([card.is_face_up for card in pile.cards])
+
+        n_cards_in_foundations = sum([len(foundation.cards) for foundation in self.foundations])
+
+        score = (n_face_up_in_piles - 7) * pile_score_multiplier + n_cards_in_foundations * foundation_score_multipler
+        return score
+    
+    @property
+    def visible_cards(self):
+        visible_cards = []
+        for pile in self.piles:
+            visible_cards.extend(pile.cards)
+        visible_cards.extend(self.waste.cards)
+        for foundation in self.foundations:
+            visible_cards.extend(foundation.cards)
+        return visible_cards
+
+    def render_game_end(self, screen, pop_up_text):
+        shadow_surf = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+        shadow_surf.fill((0, 0, 0, 128))
+        screen.blit(shadow_surf, (0, 0))
+
+        # Render game-end pop-up
+        bg_rect = pygame.Rect(0, 0, 400, 300)
+        bg_rect.center = (screen.get_width() / 2, screen.get_height() / 2)
+        pygame.draw.rect(screen, (51, 45, 82), bg_rect)
+
+        font = pygame.font.SysFont('monogram', 32)
+        # Figure out how to deal with text wrapping / dynamic positioning
+        text = font.render(pop_up_text, False, 'white')
+        screen.blit(text, (355, 240))
+        
+        reset_text = font.render("Reset", False, 'black')
+        reset_rect = pygame.Rect(0, 0, 100, 50)
+        reset_rect.center = bg_rect.center
+        pygame.draw.rect(screen, 'white', reset_rect)
+        screen.blit(reset_text, (370, 285))
+
+        score_text = font.render(f"Score: {self.score}", False, 'white')
+        screen.blit(score_text, (345, 330))
+
+        return reset_rect
 
 class Card:
     dimensions = (36, 54)
