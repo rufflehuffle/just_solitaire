@@ -19,6 +19,8 @@ deck = Deck()
 piles = deck.draw_starting_piles()
 waste = Waste()
 foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
+for foundation in foundations:
+    foundation.append(Card('K', foundation.suit))
 
 pygame.mixer.init()
 pygame.mixer.music.load("music/luigi.mp3")
@@ -29,7 +31,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    screen.fill("darkgreen")
+    screen.fill((81, 108, 58))
     pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
     if (deck.rect.collidepoint(pygame.mouse.get_pos())):
         pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
@@ -144,7 +146,7 @@ while running:
         # Render game-end pop-up
         bg_rect = pygame.Rect(0, 0, 400, 300)
         bg_rect.center = (screen.get_width() / 2, screen.get_height() / 2)
-        pygame.draw.rect(screen, 'wheat3', bg_rect)
+        pygame.draw.rect(screen, (51, 45, 82), bg_rect)
 
         font = pygame.font.SysFont('monogram', 32)
         text = font.render('You won!', False, 'white')
