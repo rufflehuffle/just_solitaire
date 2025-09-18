@@ -3,6 +3,10 @@ import random
 
 card_back = pygame.image.load("sprites\card-back.png")
 
+class Player:
+    def __init__(self):
+        self.lives = 3
+
 class Card:
     dimensions = (36, 54)
 
@@ -57,6 +61,7 @@ class Deck:
         self.image = pygame.image.load("sprites/card-back.png")
         self.empty_image = pygame.image.load("sprites/card-placeholder.png")
         self.loops = 0
+        self.max_loops = 3
         suits = ['H', 'D', 'C', 'S']
         values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 
@@ -83,10 +88,14 @@ class Deck:
         return piles
 
     def render(self, screen):
+        # TO-DO: Add display for loops remaining
         if self.cards:
             screen.blit(self.image, self.rect)
         else:
             screen.blit(self.empty_image, self.rect)
+        font = pygame.font.SysFont('monogram', 16)
+        text = font.render(f'Loops: {self.loops}/{self.max_loops}', False, 'white')
+        screen.blit(text, (self.rect.bottomleft[0] - 10, self.rect.bottomleft[1]))
 
 class Pile:
     def __init__(self, cards=None, slot=None):

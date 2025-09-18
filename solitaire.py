@@ -17,6 +17,9 @@ drag_card_original_pos = None
 draw_clicked = False
 paused = False
 pause_debounce = False
+round_over = False
+
+player = Player()
 
 deck = Deck()
 piles = deck.draw_starting_piles()
@@ -24,7 +27,11 @@ waste = Waste()
 foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
 # Debug win screen
 # for foundation in foundations:
-#     foundation.append(Card('K', foundation.suit))
+#    foundation.append(Card('K', foundation.suit))
+
+# Debug round end
+# deck.loops = deck.max_loops - 1
+# deck.cards = [Card('K', 'S')]
 
 pygame.mixer.init()
 pygame.mixer.music.load("music/luigi.mp3")
@@ -55,7 +62,16 @@ while running:
                 pygame.time.delay(100)
         else:
             waste.loop(deck)
-
+            if deck.loops == deck.max_loops:
+                player.lives -= 1
+                # Add round end screen
+                if player.lives == 1:
+                    # End game when out of lives
+                    print('Game over!')
+                else:
+                    print('Round over!')
+                    round_over = True
+        
     # Debounce for drawing
     if not (pygame.mouse.get_pressed()[0] or keystate[pygame.K_SPACE]):
         draw_clicked = False
@@ -185,22 +201,7 @@ while running:
     foundation_top_cards = [foundation.cards[-1].value for foundation in foundations if foundation.cards]
     if foundation_top_cards == ['K', 'K', 'K', 'K']:
         # Render game-end pop-up
-        bg_rect = pygame.Rect(0, 0, 400, 300)
-        bg_rect.center = (screen.get_width() / 2, screen.get_height() / 2)
-        pygame.draw.rect(screen, (51, 45, 82), bg_rect)
-
-        font = pygame.font.SysFont('monogram', 32)
-        text = font.render('You won!', False, 'white')
-        screen.blit(text, (355, 240))
-        
-        reset_text = font.render("Reset", False, 'black')
-        reset_rect = pygame.Rect(0, 0, 100, 50)
-        reset_rect.center = bg_rect.center
-        pygame.draw.rect(screen, 'white', reset_rect)
-        screen.blit(reset_text, (370, 285))
-
-        score_text = font.render(f"Score: {calculate_score(piles, foundations)}", False, 'white')
-        screen.blit(score_text, (345, 330))
+        reset_rect = render_game_end(screen, 'You won!', piles, foundations)
 
         if reset_rect.collidepoint(pygame.mouse.get_pos()):
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
@@ -209,6 +210,18 @@ while running:
                 piles = deck.draw_starting_piles()
                 waste = Waste()
                 foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
+    
+    if round_over:
+            reset_rect = render_game_end(screen, f'Round over! You have {player.lives} lives remaining', piles, foundations)
+
+            if reset_rect.collidepoint(pygame.mouse.get_pos()):
+                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+                if pygame.mouse.get_pressed()[0]:
+                    deck = Deck()
+                    piles = deck.draw_starting_piles()
+                    waste = Waste()
+                    foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
+                    round_over = False
 
     pygame.display.flip()
 
