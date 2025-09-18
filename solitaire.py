@@ -18,6 +18,7 @@ draw_clicked = False
 paused = False
 pause_debounce = False
 round_over = False
+game_over = False
 
 player = Player()
 game = Game()
@@ -28,6 +29,11 @@ deck, piles, foundations, waste = game.deck, game.piles, game.foundations, game.
 #    foundation.append(Card('K', foundation.suit))
 
 # Debug round end
+# deck.loops = deck.max_loops - 1
+# deck.cards = []
+
+# Debug game over
+# player.lives = 1
 # deck.loops = deck.max_loops - 1
 # deck.cards = []
 
@@ -62,12 +68,11 @@ while running:
             waste.loop(deck)
             if deck.loops == deck.max_loops:
                 player.lives -= 1
+                player.total_score += game.score
                 # Add round end screen
-                if player.lives == 1:
-                    # End game when out of lives
-                    print('Game over!')
+                if player.lives == 0:
+                    game_over = True
                 else:
-                    print('Round over!')
                     round_over = True
         
     # Debounce for drawing
@@ -193,28 +198,31 @@ while running:
                 game = Game()
                 deck, piles, foundations, waste = game.deck, game.piles, game.foundations, game.waste
 
+    
     # Game win detection
     foundation_top_cards = [foundation.cards[-1].value for foundation in foundations if foundation.cards]
-    if foundation_top_cards == ['K', 'K', 'K', 'K']:
+    if foundation_top_cards == ['K', 'K', 'K', 'K'] or game_over or round_over:
+        pop_up_text = ''
+        if foundation_top_cards == ['K', 'K', 'K', 'K']:
+            pop_up_text = 'You won!'
+        elif round_over:
+            pop_up_text = f'Round over! You have {player.lives} lives remaining'
+        elif game_over:
+            pop_up_text = f'Game over! Total score: {player.total_score}'
+
         # Render game-end pop-up
-        reset_rect = game.render_game_end(screen, 'You won!')
+        # BUG: Need to turn off interacting with cards / deck while this screen is open
+        reset_rect = game.render_game_end(screen, pop_up_text)
 
         if reset_rect.collidepoint(pygame.mouse.get_pos()):
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
             if pygame.mouse.get_pressed()[0]:
                 game = Game()
                 deck, piles, foundations, waste = game.deck, game.piles, game.foundations, game.waste
-    
-    if round_over:
-            # BUG: Need to turn off interacting with cards / deck while this screen is open
-            reset_rect = game.render_game_end(screen, f'Round over! You have {player.lives} lives remaining')
-
-            if reset_rect.collidepoint(pygame.mouse.get_pos()):
-                pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
-                if pygame.mouse.get_pressed()[0]:
-                    game = Game()
-                    deck, piles, foundations, waste = game.deck, game.piles, game.foundations, game.waste
-                    round_over = False
+                round_over = False
+                if game_over:
+                    game_over = False
+                    player = Player()
 
     pygame.display.flip()
 

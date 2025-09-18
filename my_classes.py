@@ -6,8 +6,7 @@ card_back = pygame.image.load("sprites\card-back.png")
 class Player:
     def __init__(self):
         self.lives = 3
-        self.cards_revealed = 0
-        self.foundation_cards_set = 0
+        self.total_score = 0
 
 class Game:
     def __init__(self):
@@ -20,15 +19,18 @@ class Game:
     def score(self):
         pile_score_multiplier = 1
         foundation_score_multipler = 3
-
-        n_face_up_in_piles = 0
+        return self.num_cards_revealed * pile_score_multiplier + self.num_cards_in_foundation * foundation_score_multipler
+    
+    @property
+    def num_cards_revealed(self):
+        num_cards_revealed = 0
         for pile in self.piles:
-            n_face_up_in_piles += sum([card.is_face_up for card in pile.cards])
-
-        n_cards_in_foundations = sum([len(foundation.cards) for foundation in self.foundations])
-
-        score = (n_face_up_in_piles - 7) * pile_score_multiplier + n_cards_in_foundations * foundation_score_multipler
-        return score
+            num_cards_revealed += sum([card.is_face_up for card in pile.cards])
+        return num_cards_revealed
+    
+    @property
+    def num_cards_in_foundation(self):
+        return sum([len(foundation.cards) for foundation in self.foundations])
     
     @property
     def visible_cards(self):
