@@ -56,6 +56,7 @@ class Deck:
         self.rect = pygame.Rect(400, 50, *Card.dimensions)
         self.image = pygame.image.load("sprites/card-back.png")
         self.empty_image = pygame.image.load("sprites/card-placeholder.png")
+        self.loops = 0
         suits = ['H', 'D', 'C', 'S']
         values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 
@@ -220,6 +221,7 @@ class Waste:
         for card in self.cards:
             card.location = deck
         deck.cards.extend(reversed(self.cards))
+        deck.loops += 1
         self.cards.clear()
     
     def render(self, screen, n=3):
@@ -235,12 +237,3 @@ class Waste:
                 self.cards[-2].is_draggable = True
             return self.cards.pop()
         return None
-    
-def get_all_cards_on_screen(piles, waste, foundations):
-    cards_on_screen = []
-    for pile in piles:
-        cards_on_screen.extend(pile.cards)
-    cards_on_screen.extend(waste.cards)
-    for foundation in foundations:
-        cards_on_screen.extend(foundation.cards)
-    return cards_on_screen

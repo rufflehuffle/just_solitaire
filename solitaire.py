@@ -1,5 +1,6 @@
 import pygame
-from my_classes import Card, Deck, Pile, Foundation, Waste, get_all_cards_on_screen
+from my_classes import Card, Deck, Pile, Foundation, Waste
+from helper import *
 
 pygame.init()
 pygame.display.set_caption('Solitaire')
@@ -19,8 +20,9 @@ deck = Deck()
 piles = deck.draw_starting_piles()
 waste = Waste()
 foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
-for foundation in foundations:
-    foundation.append(Card('K', foundation.suit))
+# Debug win screen
+# for foundation in foundations:
+#     foundation.append(Card('K', foundation.suit))
 
 pygame.mixer.init()
 pygame.mixer.music.load("music/luigi.mp3")
@@ -157,6 +159,9 @@ while running:
         reset_rect.center = bg_rect.center
         pygame.draw.rect(screen, 'white', reset_rect)
         screen.blit(reset_text, (370, 285))
+
+        score_text = font.render(f"Score: {calculate_score(piles, foundations)}", False, 'white')
+        screen.blit(score_text, (345, 330))
 
         if reset_rect.collidepoint(pygame.mouse.get_pos()):
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
