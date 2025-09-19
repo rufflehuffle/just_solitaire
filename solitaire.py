@@ -15,21 +15,17 @@ running = True
 cards_being_dragged = []
 card_mouse_offset = 0
 drag_card_original_pos = None
-draw_clicked = False
-pause_debounce = False
-round_over = False
-game_over = False
 shop_open = False
 
-player = Player()
 game = Game()
-deck, piles, foundations, waste = game.deck, game.piles, game.foundations, game.waste
+deck, piles, foundations, waste, player = game.deck, game.piles, game.foundations, game.waste, game.player
 
 interactables = []
 # test_button = Button(None, None, True, pygame.Rect(100, 100, 100, 100), None, 'Test', 16, 'white')
 # interactables.append(test_button)
 open_pause = Interactable(hotkey=pygame.K_ESCAPE, on_click=pause_game, context=game)
 interactables.append(open_pause)
+interactables.append(game.deck)
 
 shop = Shop()
 # Debug shop screen
@@ -61,12 +57,10 @@ while running:
     screen.fill((81, 108, 58))
     # BUG: Cursor flicks between 'ARROW' and 'HAND' ocassionally while hovering over a clickable object
     pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
-    if (deck.rect.collidepoint(pygame.mouse.get_pos())):
-        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
 
     keystate = pygame.key.get_pressed()
 
-    # Handle all interactable objects
+    # Render and handle all interactable objects
     #   Ex: Deck, Cards, Buttons, etc.
     for interactable in interactables:
         if interactable.is_active:
@@ -86,27 +80,6 @@ while running:
                     interactable.debounce = True
             if not(mb1_down or hotkey_down):
                 interactable.debounce = False
-
-    # Handle drawing
-    # On click on deck or 'SPACE' press,
-    if ((deck.rect.collidepoint(pygame.mouse.get_pos()) and pygame.mouse.get_pressed()[0]) or (keystate[pygame.K_SPACE])) and not draw_clicked and not cards_being_dragged:
-        draw_clicked = True
-
-        if deck.cards:
-            card_drawn = deck.draw_card()
-            waste.append(card_drawn)
-            if card_drawn:
-                pygame.time.delay(100)
-        else:
-            waste.loop(deck)
-            if deck.loops == deck.max_loops:
-                player.lives -= 1
-                player.total_score += game.score
-                # Add round end screen
-                if player.lives == 0:
-                    game_over = True
-                else:
-                    round_over = True
         
     # Debounce for drawing
     if not (pygame.mouse.get_pressed()[0] or keystate[pygame.K_SPACE]):
@@ -224,13 +197,13 @@ while running:
     
     # Game win detection
     foundation_top_cards = [foundation.cards[-1].value for foundation in foundations if foundation.cards]
-    if foundation_top_cards == ['K', 'K', 'K', 'K'] or game_over or round_over:
+    if foundation_top_cards == ['K', 'K', 'K', 'K'] or game.game_over or game.round_over:
         pop_up_text = ''
         if foundation_top_cards == ['K', 'K', 'K', 'K']:
             pop_up_text = 'You won!'
-        elif round_over:
+        elif game.round_over:
             pop_up_text = f'Round over! You have {player.lives} lives remaining'
-        elif game_over:
+        elif game.game_over:
             pop_up_text = f'Game over! Total score: {player.total_score}'
 
         # Render game-end pop-up
@@ -241,13 +214,16 @@ while running:
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
             if pygame.mouse.get_pressed()[0]:
                 game.reset()
+                interactables.remove(deck)
+                interactables.append(game.deck)
                 deck, piles, foundations, waste = game.deck, game.piles, game.foundations, game.waste
-                if round_over:
-                    round_over = False
+                if game.round_over:
+                    game.round_over = False
                     shop_open = True
-                if game_over:
-                    game_over = False
-                    player = Player()
+                if game.game_over:
+                    game.game_over = False
+                    game.player = Player()
+                    player = game.player
 
     if shop_open:
         next_round_rect = shop.render(screen)

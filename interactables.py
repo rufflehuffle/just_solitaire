@@ -15,8 +15,10 @@ class Interactable:
         pass
 
 class Button(Interactable):
-    def __init__(self, on_hover, on_click, is_active, rect, hotkey, text, font_size, font_color):
-        super().__init__(on_hover, on_click, is_active, rect, hotkey)
+    # TO-DO: Flesh out button class with automatic text wrapping, center alignment, padding, background colors, etc.
+    # Look at HTML / CSS buttons for inspiration
+    def __init__(self, text, font_size, font_color, **kwargs):
+        super().__init__(**kwargs)
         self.text = text
         self.font_size = font_size
         self.font_color = font_color

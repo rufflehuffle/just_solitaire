@@ -1,5 +1,6 @@
 import pygame
 import random
+from interactables import *
 
 card_back = pygame.image.load("sprites/card-back.png")
 
@@ -10,14 +11,17 @@ class Player:
 
 class Game:
     def __init__(self):
-        self.deck = Deck()
+        self.deck = Deck(context=self)
         self.piles = self.deck.draw_starting_piles()
         self.waste = Waste()
         self.foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
+        self.player = Player()
         self.paused = False
+        self.round_over = False
+        self.game_over = False
 
     def reset(self):
-        self.deck = Deck()
+        self.deck = Deck(context=self)
         self.piles = self.deck.draw_starting_piles()
         self.waste = Waste()
         self.foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
@@ -75,10 +79,12 @@ class Game:
 
         return reset_rect
 
-class Card:
+class Card(Interactable):
     dimensions = (36, 54)
 
-    def __init__(self, value, suit, location=None, slot=None):
+    def __init__(self, value, suit, location=None, slot=None, **kwargs):
+        super().__init__(**kwargs)
+        
         self.value = value
         self.suit = suit
         self.int_value = self.card_value_to_int(value)
@@ -122,14 +128,16 @@ class Card:
         else:
             return pygame.Rect(self.rect.x, self.rect.y, *Card.dimensions)
 
-class Deck:
-    def __init__(self):
+class Deck(Interactable):
+    def __init__(self, **kwargs):
+        super().__init__(on_click=self.on_click, **kwargs)
         self.cards = []
         self.rect = pygame.Rect(400, 50, *Card.dimensions)
         self.image = pygame.image.load("sprites/card-back.png")
         self.empty_image = pygame.image.load("sprites/card-placeholder.png")
         self.loops = 0
         self.max_loops = 3
+        self.hotkey = pygame.K_SPACE
         suits = ['H', 'D', 'C', 'S']
         values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 
@@ -137,6 +145,21 @@ class Deck:
             for value in values:
                 self.cards.append(Card(value, suit, location='deck'))
         random.shuffle(self.cards)
+
+    def on_click(self, game):
+        if self.cards:
+            card_drawn = self.draw_card()
+            game.waste.append(card_drawn)
+        else:
+            game.waste.loop(self)
+            if self.loops == self.max_loops:
+                game.player.lives -= 1
+                game.player.total_score += game.score
+                # Add round end screen
+                if game.player.lives == 0:
+                    game.game_over = True
+                else:
+                    game.round_over = True
 
     def draw_card(self):
         if self.cards:
@@ -156,7 +179,6 @@ class Deck:
         return piles
 
     def render(self, screen):
-        # TO-DO: Add display for loops remaining
         if self.cards:
             screen.blit(self.image, self.rect)
         else:
