@@ -82,7 +82,7 @@ class Game:
 class Card(Interactable):
     dimensions = (36, 54)
 
-    def __init__(self, value, suit, location=None, slot=None, **kwargs):
+    def __init__(self, value, suit, location=None, **kwargs):
         super().__init__(**kwargs)
         
         self.value = value
