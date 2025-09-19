@@ -1,7 +1,7 @@
 import pygame
 import random
 
-card_back = pygame.image.load("sprites\card-back.png")
+card_back = pygame.image.load("sprites/card-back.png")
 
 class Player:
     def __init__(self):
@@ -10,6 +10,13 @@ class Player:
 
 class Game:
     def __init__(self):
+        self.deck = Deck()
+        self.piles = self.deck.draw_starting_piles()
+        self.waste = Waste()
+        self.foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
+        self.paused = False
+
+    def reset(self):
         self.deck = Deck()
         self.piles = self.deck.draw_starting_piles()
         self.waste = Waste()
@@ -227,7 +234,6 @@ class Pile:
             return card
         return None
 
-
 class Foundation:
     def __init__(self, suit=None, cards=None):
         self.cards = list(cards) if cards is not None else []
@@ -307,3 +313,57 @@ class Waste:
                 self.cards[-2].is_draggable = True
             return self.cards.pop()
         return None
+    
+class Shop:
+    def __init__(self):
+        self.items=[]
+
+    def render_shop_button(self, screen):
+        pass
+
+    def render(self, screen):
+        screen.fill('darkgreen')
+        for item in self.items:
+            if item:
+                item.render(screen)
+        
+        # Render next round button
+        font = pygame.font.SysFont('monogram', 32)
+        next_round_text = font.render('Next>', False, 'black')
+        next_round_rect = pygame.Rect(screen.get_width() - 110, screen.get_height() - 60, 80, 50)
+        
+        pygame.draw.rect(screen, 'white', next_round_rect)
+        screen.blit(next_round_text, (screen.get_width() - 100, screen.get_height() - 50))
+
+        return next_round_rect
+
+    def buy(self, player, item):
+        pass
+
+    def refresh(self):
+        pass
+
+class Item:
+    def __init__(self, cost, name, shop, image_path):
+        self.cost = cost
+        self.name = name
+        self.shop = shop
+        self.image = pygame.image.load(image_path)
+    
+    @property
+    def slot(self):
+        return self.shop.items.index(self)
+
+    def render(self, screen):
+        slot_offset = 100
+        image_rect = self.image.get_rect()
+        image_rect.center = (100 + slot_offset * self.slot, 100)
+        screen.blit(self.image, image_rect)
+
+        font = pygame.font.SysFont('monogram', 16)
+        text = font.render(f"{self.cost}g", None, 'white')
+        text_rect = text.get_rect()
+        text_rect.center = image_rect.midbottom
+        text_rect.y += text_rect.h
+
+        screen.blit(text, text_rect)
