@@ -2,14 +2,17 @@ import pygame
 import random
 from interactables import *
 from enum import Enum
+from dataclasses import dataclass, field
+from typing import List
 
 card_back = pygame.image.load("sprites/card-back.png")
 
+@dataclass
 class Player:
-    def __init__(self):
-        self.lives = 3
-        self.total_score = 0
-        self.gold = 0
+    lives: int = 3
+    total_score: int = 0
+    gold: int = 0
+    items: List = field(default_factory=lambda: [])
 
 class GameState(Enum):
     in_round = 1
@@ -27,6 +30,7 @@ class Game:
         self.foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
         self.player = Player()
         self.game_state = GameState.in_round
+        self.game_previous_state = None
 
     def reset(self):
         self.deck = Deck(context=self)
@@ -347,10 +351,7 @@ class Shop:
     def __init__(self):
         self.items=[]
 
-    def render_shop_button(self, screen):
-        pass
-
-    def render(self, screen):
+    def render(self, screen, player):
         screen.fill('darkgreen')
         for item in self.items:
             if item:
@@ -364,35 +365,51 @@ class Shop:
         pygame.draw.rect(screen, 'white', next_round_rect)
         screen.blit(next_round_text, (screen.get_width() - 100, screen.get_height() - 50))
 
-        return next_round_rect
+        gold_text = font.render(f'Gold: {player.gold}', False, 'white')
+        screen.blit(gold_text, (50, 50))
 
-    def buy(self, player, item):
-        pass
+        return next_round_rect
 
     def refresh(self):
         pass
 
-class Item:
-    def __init__(self, cost, name, shop, image_path):
+class Item(Interactable):
+    def __init__(self, cost, name, image_filename, location=None):
+        super().__init__()
         self.cost = cost
         self.name = name
-        self.shop = shop
-        self.image = pygame.image.load(image_path)
+        self.location = location
+        self.image = pygame.image.load("sprites/" + image_filename + ".png")  
+        self.rect = self.image.get_rect()
+        self.on_click = self.buy
     
     @property
     def slot(self):
-        return self.shop.items.index(self)
+        return self.location.items.index(self)
 
     def render(self, screen):
         slot_offset = 100
-        image_rect = self.image.get_rect()
-        image_rect.center = (100 + slot_offset * self.slot, 100)
-        screen.blit(self.image, image_rect)
+        if isinstance(self.location, Shop):
+            self.rect.center = (100 + slot_offset * self.slot, 100)
 
-        font = pygame.font.SysFont('monogram', 16)
-        text = font.render(f"{self.cost}g", None, 'white')
-        text_rect = text.get_rect()
-        text_rect.center = image_rect.midbottom
-        text_rect.y += text_rect.h
+            font = pygame.font.SysFont('monogram', 16)
+            text = font.render(f"{self.cost}g", None, 'white')
+            text_rect = text.get_rect()
+            text_rect.center = self.rect.midbottom
+            text_rect.y += text_rect.h
 
-        screen.blit(text, text_rect)
+            screen.blit(text, text_rect)
+        else:
+            self.rect.center = (100 + slot_offset * self.slot, 500)
+        
+        screen.blit(self.image, self.rect)            
+
+        
+
+    def buy(self, player):
+        if self.cost <= player.gold:
+            player.items.append(self)
+            player.gold -= self.cost
+            self.location = player
+        else:
+            pass

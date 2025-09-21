@@ -28,9 +28,3 @@ class Button(Interactable):
             font = pygame.font.SysFont('monogram', self.font_size)
             display_text = font.render(self.text, False, self.font_color)
             screen.blit(display_text, self.rect)
-
-def pause_game(game):
-    if game.paused:
-        game.paused = False
-    else:
-        game.paused = True

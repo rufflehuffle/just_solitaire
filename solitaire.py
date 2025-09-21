@@ -2,6 +2,7 @@ import pygame
 from my_classes import *
 from helper import *
 from interactables import *
+from items import *
 
 pygame.init()
 pygame.display.set_caption('Just Solitaire')
@@ -30,7 +31,12 @@ interactables.append(game.deck)
 shop = Shop()
 # Debug shop screen
 game.game_state = GameState.in_shop
-shop.items = [Item(5, 'test', shop, "sprites/2C.png"), Item(6, 'test', shop, "sprites/3C.png"), Item(8, 'test', shop, "sprites/4C.png")]
+player.gold = 30
+shop.items = [extra_life]
+for item in shop.items:
+    item.location = shop
+    # item.on_hover = lambda x: print(item.name)
+interactables.extend(shop.items)
 
 # Debug win screen
 # for foundation in foundations:
@@ -59,29 +65,30 @@ while running:
     # BUG: Cursor flicks between 'ARROW' and 'HAND' ocassionally while hovering over a clickable object
     pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
 
-    if game.game_state == GameState.in_round:
-        keystate = pygame.key.get_pressed()
+    keystate = pygame.key.get_pressed()
 
-        # Render and handle all interactable objects
-        #   Ex: Deck, Cards, Buttons, etc.
-        for interactable in interactables:
-            if interactable.is_active:
-                interactable.render(screen)
-                is_hovering = interactable.rect.collidepoint(pygame.mouse.get_pos()) if interactable.rect else False
-                mb1_down = pygame.mouse.get_pressed()[0]
-                hotkey_down = keystate[interactable.hotkey] if interactable.hotkey else False
-                if is_hovering:
-                    if interactable.on_hover:
-                        interactable.on_hover(interactable.context)
+    # Render and handle all interactable objects
+    #   Ex: Deck, Cards, Buttons, etc.
+    for interactable in interactables:
+        if interactable.is_active:
+            interactable.render(screen)
+            is_hovering = interactable.rect.collidepoint(pygame.mouse.get_pos()) if interactable.rect else False
+            mb1_down = pygame.mouse.get_pressed()[0]
+            hotkey_down = keystate[interactable.hotkey] if interactable.hotkey else False
+            if is_hovering:
+                if interactable.on_hover:
+                    interactable.on_hover(interactable.context)
+                if interactable.on_click:
+                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+            if not interactable.debounce:
+                if (is_hovering and mb1_down) or hotkey_down:
                     if interactable.on_click:
-                        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
-                if not interactable.debounce:
-                    if (is_hovering and mb1_down) or hotkey_down:
-                        if interactable.on_click:
-                            interactable.on_click(interactable.context)
-                        interactable.debounce = True
-                if not(mb1_down or hotkey_down):
-                    interactable.debounce = False
+                        interactable.on_click(interactable.context)
+                    interactable.debounce = True
+            if not(mb1_down or hotkey_down):
+                interactable.debounce = False
+
+    if game.game_state == GameState.in_round:
             
         # Debounce for drawing
         if not (pygame.mouse.get_pressed()[0] or keystate[pygame.K_SPACE]):
@@ -197,12 +204,18 @@ while running:
         if reset_rect.collidepoint(pygame.mouse.get_pos()):
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
             if pygame.mouse.get_pressed()[0]:
-                game.paused = False
+                game.game_state = GameState.in_round
                 game.reset()
                 deck, piles, foundations, waste = game.deck, game.piles, game.foundations, game.waste
 
     if game.game_state == GameState.in_shop:
-        next_round_rect = shop.render(screen)
+        next_round_rect = shop.render(screen, game.player)
+
+        for item in shop.items:
+            item.context = game.player
+
+        for item in game.player.items:
+            item.on_click = None
 
         if next_round_rect.collidepoint(pygame.mouse.get_pos()):
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
