@@ -1,6 +1,7 @@
 import pygame
 import random
 from interactables import *
+from enum import Enum
 
 card_back = pygame.image.load("sprites/card-back.png")
 
@@ -8,6 +9,15 @@ class Player:
     def __init__(self):
         self.lives = 3
         self.total_score = 0
+        self.gold = 0
+
+class GameState(Enum):
+    in_round = 1
+    paused = 2
+    round_over = 3
+    round_win = 4
+    in_shop = 5
+    game_over = 6
 
 class Game:
     def __init__(self):
@@ -16,9 +26,7 @@ class Game:
         self.waste = Waste()
         self.foundations = [Foundation(suit=suit) for suit in ['H', 'D', 'C', 'S']]
         self.player = Player()
-        self.paused = False
-        self.round_over = False
-        self.game_over = False
+        self.game_state = GameState.in_round
 
     def reset(self):
         self.deck = Deck(context=self)
@@ -30,7 +38,7 @@ class Game:
     def score(self):
         pile_score_multiplier = 1
         foundation_score_multipler = 3
-        return self.num_cards_revealed * pile_score_multiplier + self.num_cards_in_foundation * foundation_score_multipler
+        return (self.num_cards_revealed - 7) * pile_score_multiplier + self.num_cards_in_foundation * foundation_score_multipler
     
     @property
     def num_cards_revealed(self):
@@ -136,7 +144,7 @@ class Deck(Interactable):
         self.image = pygame.image.load("sprites/card-back.png")
         self.empty_image = pygame.image.load("sprites/card-placeholder.png")
         self.loops = 0
-        self.max_loops = 3
+        self.max_loops = 1
         self.hotkey = pygame.K_SPACE
         suits = ['H', 'D', 'C', 'S']
         values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
@@ -155,11 +163,10 @@ class Deck(Interactable):
             if self.loops == self.max_loops:
                 game.player.lives -= 1
                 game.player.total_score += game.score
-                # Add round end screen
                 if game.player.lives == 0:
-                    game.game_over = True
+                    game.game_state = GameState.game_over
                 else:
-                    game.round_over = True
+                    game.game_state = GameState.round_over
 
     def draw_card(self):
         if self.cards:
