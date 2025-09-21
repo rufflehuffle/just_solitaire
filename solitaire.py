@@ -8,7 +8,7 @@ pygame.display.set_caption('Just Solitaire')
 icon = pygame.image.load('sprites/KH.png')
 pygame.display.set_icon(icon)
 
-screen = pygame.display.set_mode((800, 600))
+screen = pygame.display.set_mode([800, 600])
 clock = pygame.time.Clock()
 running = True
 
@@ -29,8 +29,8 @@ interactables.append(game.deck)
 
 shop = Shop()
 # Debug shop screen
-# shop_open = True
-# shop.items = [Item(5, 'test', shop, "sprites/2C.png"), Item(6, 'test', shop, "sprites/3C.png"), Item(8, 'test', shop, "sprites/4C.png")]
+shop_open = True
+shop.items = [Item(5, 'test', shop, "sprites/2C.png"), Item(6, 'test', shop, "sprites/3C.png"), Item(8, 'test', shop, "sprites/4C.png")]
 
 # Debug win screen
 # for foundation in foundations:

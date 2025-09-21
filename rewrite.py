@@ -93,7 +93,7 @@ class CardGraphicComponent(GraphicComponent):
         pygame.draw.rect(screen, 'white', self.rect)
 
 class CardInputComponent(InputComponent):
-    # TO-DO: further decouple this
+    # TO-DO: Further decouple this by adding callback functions
     def __init__(self, card, **kwargs):
         super().__init__(**kwargs)
         self.card = card
@@ -108,10 +108,11 @@ class CardInputComponent(InputComponent):
         pass
 
 class Card():
-    def __init__(self, value, suit):
+    def __init__(self, value, suit, graphic, input):
         self.suit = suit
         self.value = value
 
+        # Cards shouldn't be instantiated with the components built-in, should be passed in
         self.graphic = CardGraphicComponent()
         self.input = CardInputComponent(self, collision_rect=self.graphic.rect)
 
