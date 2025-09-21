@@ -4,6 +4,8 @@ from interactables import *
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import List
+import math
+import numpy as np
 
 card_back = pygame.image.load("sprites/card-back.png")
 
@@ -104,16 +106,30 @@ class Card(Interactable):
         self.rect = None
         self.is_face_up = True
         self.is_draggable = True
+
+        self.being_dragged = False
+        self.time_held = 0
+        self.velocity = np.array([0.0, 0.0])
+
         self.location = location
         self.image = pygame.image.load(f"sprites/{self.value}{self.suit}.png")
 
         self.color = "red" if suit in ['H', 'D'] else "black"
     
     def render(self, screen):
-        if self.is_face_up:
+        if self.being_dragged:
+            rendered_image = pygame.transform.rotate(self.image, 5 * math.sin(self.time_held/30))
+            screen.blit(rendered_image, (self.rect.x, self.rect.y))
+        elif self.is_face_up:
             screen.blit(self.image, (self.rect.x, self.rect.y))
         else:
             screen.blit(card_back, self.rect)
+
+    def drag_tween(self, target_position):
+        current_position = np.array([*self.rect.center])
+        distance = target_position - current_position
+        next_pos = current_position + 0.4 * distance
+        return next_pos
 
     def card_value_to_int(self, value):
         if value == 'A':
@@ -167,6 +183,7 @@ class Deck(Interactable):
             if self.loops == self.max_loops:
                 game.player.lives -= 1
                 game.player.total_score += game.score
+                game.player.gold += math.floor(game.score / 5)
                 if game.player.lives == 0:
                     game.game_state = GameState.game_over
                 else:

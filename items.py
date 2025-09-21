@@ -5,3 +5,9 @@ extra_life = Item(
     "Extra Life",
     "2H"
 )
+
+extra_loop = Item(
+    10,
+    "Extra Loop",
+    "2C"
+)

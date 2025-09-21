@@ -30,11 +30,11 @@ interactables.append(game.deck)
 
 shop = Shop()
 # Debug shop screen
-game.game_state = GameState.in_shop
-player.gold = 30
-shop.items = [extra_life]
+# game.game_state = GameState.in_shop
+shop.items = [extra_life, extra_loop]
 for item in shop.items:
     item.location = shop
+    item.is_active = False
     # item.on_hover = lambda x: print(item.name)
 interactables.extend(shop.items)
 
@@ -67,28 +67,12 @@ while running:
 
     keystate = pygame.key.get_pressed()
 
-    # Render and handle all interactable objects
-    #   Ex: Deck, Cards, Buttons, etc.
     for interactable in interactables:
-        if interactable.is_active:
-            interactable.render(screen)
-            is_hovering = interactable.rect.collidepoint(pygame.mouse.get_pos()) if interactable.rect else False
-            mb1_down = pygame.mouse.get_pressed()[0]
-            hotkey_down = keystate[interactable.hotkey] if interactable.hotkey else False
-            if is_hovering:
-                if interactable.on_hover:
-                    interactable.on_hover(interactable.context)
-                if interactable.on_click:
-                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
-            if not interactable.debounce:
-                if (is_hovering and mb1_down) or hotkey_down:
-                    if interactable.on_click:
-                        interactable.on_click(interactable.context)
-                    interactable.debounce = True
-            if not(mb1_down or hotkey_down):
-                interactable.debounce = False
+        interactable.is_active = False
 
     if game.game_state == GameState.in_round:
+        deck.is_active = True
+        open_pause.is_active = True
             
         # Debounce for drawing
         if not (pygame.mouse.get_pressed()[0] or keystate[pygame.K_SPACE]):
@@ -135,6 +119,10 @@ while running:
         if cards_being_dragged and not pygame.mouse.get_pressed()[0]:
             cards = cards_being_dragged
             top_card = cards[0]
+            for card in cards_being_dragged:
+                card.being_dragged = False
+                card.time_held = 0
+                card.velocity = 0
             cards_being_dragged = []
             valid_placement = False
 
@@ -168,15 +156,22 @@ while running:
             drag_card_original_pos = None
 
             pygame.time.delay(100)
-        
+
         # Handle cards being dragged around
+        # TO-DO: Add a bit of lag and momentum to moving the card around so it actually FEELS like you're dragging it around
         if cards_being_dragged:
             stack_offset = 30
-            cards_being_dragged[0].rect.topleft = pygame.mouse.get_pos()[0] + card_mouse_offset.x, pygame.mouse.get_pos()[1] + card_mouse_offset.y
+            top_card = cards_being_dragged[0]
+            # top_card.rect.topleft = pygame.mouse.get_pos()[0] + card_mouse_offset.x, pygame.mouse.get_pos()[1] + card_mouse_offset.y
+            top_card.rect.center = top_card.drag_tween(pygame.mouse.get_pos())
+            # top_card_velocity = (top_card.rect.x - top_card_prev_pos[0], top_card.rect.y - top_card_prev_pos[1])
+
             for i, card in enumerate(cards_being_dragged[1:], start=1):
                 card.rect.topleft = (cards_being_dragged[0].rect.x, cards_being_dragged[0].rect.y + i * stack_offset)
 
             for card in cards_being_dragged:
+                card.being_dragged = True
+                card.time_held += 1
                 card.render(screen)
 
         # Game win detection
@@ -213,6 +208,7 @@ while running:
 
         for item in shop.items:
             item.context = game.player
+            item.is_active = True
 
         for item in game.player.items:
             item.on_click = None
@@ -226,7 +222,6 @@ while running:
         pop_up_text = 'You won!'
 
         # Render game-end pop-up
-        # BUG: Need to turn off interacting with cards / deck while this screen is open
         reset_rect = game.render_game_end(screen, pop_up_text)
 
         if reset_rect.collidepoint(pygame.mouse.get_pos()):
@@ -247,7 +242,6 @@ while running:
         pop_up_text = f'Round over! You have {player.lives} lives remaining'
 
         # Render game-end pop-up
-        # BUG: Need to turn off interacting with cards / deck while this screen is open
         reset_rect = game.render_game_end(screen, pop_up_text)
 
         if reset_rect.collidepoint(pygame.mouse.get_pos()):
@@ -257,18 +251,12 @@ while running:
                 interactables.remove(deck)
                 interactables.append(game.deck)
                 deck, piles, foundations, waste = game.deck, game.piles, game.foundations, game.waste
-                if game.game_state == GameState.round_over:
-                    game.game_state = GameState.in_shop
-                elif game.game_state == GameState.game_over:
-                    game.game_state = GameState.in_round
-                    game.player = Player()
-                    player = game.player
+                game.game_state = GameState.in_shop
 
     if game.game_state == GameState.game_over:
         pop_up_text = f'Game over! Total score: {player.total_score}'
 
         # Render game-end pop-up
-        # BUG: Need to turn off interacting with cards / deck while this screen is open
         reset_rect = game.render_game_end(screen, pop_up_text)
 
         if reset_rect.collidepoint(pygame.mouse.get_pos()):
@@ -278,12 +266,30 @@ while running:
                 interactables.remove(deck)
                 interactables.append(game.deck)
                 deck, piles, foundations, waste = game.deck, game.piles, game.foundations, game.waste
-                if game.game_state == GameState.round_over:
-                    game.game_state = GameState.in_shop
-                elif game.game_state == GameState.game_over:
-                    game.game_state = GameState.in_round
-                    game.player = Player()
-                    player = game.player
+                game.game_state = GameState.in_round
+                game.player = Player()
+                player = game.player
+
+    # Render and handle all interactable objects
+    #   Ex: Deck, Cards, Buttons, etc.
+    for interactable in interactables:
+        if interactable.is_active:
+            interactable.render(screen)
+            is_hovering = interactable.rect.collidepoint(pygame.mouse.get_pos()) if interactable.rect else False
+            mb1_down = pygame.mouse.get_pressed()[0]
+            hotkey_down = keystate[interactable.hotkey] if interactable.hotkey else False
+            if is_hovering:
+                if interactable.on_hover:
+                    interactable.on_hover(interactable.context)
+                if interactable.on_click:
+                    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
+            if not interactable.debounce:
+                if (is_hovering and mb1_down) or hotkey_down:
+                    if interactable.on_click:
+                        interactable.on_click(interactable.context)
+                    interactable.debounce = True
+            if not(mb1_down or hotkey_down):
+                interactable.debounce = False
 
     pygame.display.flip()
 
